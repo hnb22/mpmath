@@ -181,7 +181,7 @@ class MPContext(BaseMPContext, StandardBaseContext):
             return ctx.make_mpc((real, imag))
 
     def _nthroot(ctx, x, n):
-        if hasattr(x, '_mpf_'):
+        if ctx._is_float_type(x):
             try:
                 return ctx.make_mpf(libmp.mpf_nthroot(x._mpf_, n, *ctx._prec_rounding))
             except ComplexResult:
@@ -236,7 +236,7 @@ class MPContext(BaseMPContext, StandardBaseContext):
         if type(x) not in ctx.types:
             x = ctx.convert(x)
         prec, rounding = ctx._parse_prec(kwargs)
-        if hasattr(x, '_mpf_'):
+        if ctx._is_float_type(x):
             c, s = libmp.mpf_cos_sin(x._mpf_, prec, rounding)
             return ctx.make_mpf(c), ctx.make_mpf(s)
         elif hasattr(x, '_mpc_'):
@@ -249,7 +249,7 @@ class MPContext(BaseMPContext, StandardBaseContext):
         if type(x) not in ctx.types:
             x = ctx.convert(x)
         prec, rounding = ctx._parse_prec(kwargs)
-        if hasattr(x, '_mpf_'):
+        if ctx._is_float_type(x):
             c, s = libmp.mpf_cos_sin_pi(x._mpf_, prec, rounding)
             return ctx.make_mpf(c), ctx.make_mpf(s)
         elif hasattr(x, '_mpc_'):
@@ -268,6 +268,11 @@ class MPContext(BaseMPContext, StandardBaseContext):
 
     # Several helper methods
     # TODO: add more of these, make consistent, write docstrings, ...
+
+    def _is_float_type(ctx, x):
+        if hasattr(x, '_mpf_') and type(x) is not complex:
+            return True
+        return False
 
     def _is_real_type(ctx, x):
         if hasattr(x, '_mpc_') or type(x) is complex:
@@ -303,7 +308,7 @@ class MPContext(BaseMPContext, StandardBaseContext):
         if isinstance(x, int_types) or isinstance(x, MPQ):
             return False
         x = ctx.convert(x)
-        if hasattr(x, '_mpf_') or hasattr(x, '_mpc_'):
+        if ctx._is_float_type(x) or hasattr(x, '_mpc_'):
             return ctx.isnan(x)
         raise TypeError("isnan() needs a number as input")
 
@@ -339,7 +344,7 @@ class MPContext(BaseMPContext, StandardBaseContext):
         """
         if not x:
             return True
-        if hasattr(x, '_mpf_'):
+        if ctx._is_float_type(x):
             if ctx.isfinite(x):
                 man, exp = to_man_exp(x._mpf_, signed=True)
                 return man < 0 and exp >= 0
@@ -570,7 +575,7 @@ class MPContext(BaseMPContext, StandardBaseContext):
             return "[%s]" % (", ".join(ctx.nstr(c, n, **kwargs) for c in x))
         if isinstance(x, tuple):
             return "(%s)" % (", ".join(ctx.nstr(c, n, **kwargs) for c in x))
-        if hasattr(x, '_mpf_'):
+        if ctx._is_float_type(x):
             return to_str(x._mpf_, n, **kwargs)
         if hasattr(x, '_mpc_'):
             return "(" + mpc_to_str(x._mpc_, n, **kwargs)  + ")"
@@ -817,7 +822,7 @@ maxterms, or set zeroprec."""
         """
         prec, rounding = ctx._parse_prec(kwargs)
         x = ctx.convert(x)
-        if hasattr(x, '_mpf_'):
+        if ctx._is_float_type(x):
             return ctx.make_mpf(mpf_neg(x._mpf_, prec, rounding))
         if hasattr(x, '_mpc_'):
             return ctx.make_mpc(mpc_neg(x._mpc_, prec, rounding))
@@ -886,7 +891,7 @@ maxterms, or set zeroprec."""
         x = ctx.convert(x)
         y = ctx.convert(y)
         try:
-            if hasattr(x, '_mpf_'):
+            if ctx._is_float_type(x):
                 if hasattr(y, '_mpf_'):
                     return ctx.make_mpf(mpf_add(x._mpf_, y._mpf_, prec, rounding))
                 if hasattr(y, '_mpc_'):
@@ -951,7 +956,7 @@ maxterms, or set zeroprec."""
         x = ctx.convert(x)
         y = ctx.convert(y)
         try:
-            if hasattr(x, '_mpf_'):
+            if ctx._is_float_type(x):
                 if hasattr(y, '_mpf_'):
                     return ctx.make_mpf(mpf_sub(x._mpf_, y._mpf_, prec, rounding))
                 if hasattr(y, '_mpc_'):
@@ -1019,7 +1024,7 @@ maxterms, or set zeroprec."""
         x = ctx.convert(x)
         y = ctx.convert(y)
         try:
-            if hasattr(x, '_mpf_'):
+            if ctx._is_float_type(x):
                 if hasattr(y, '_mpf_'):
                     return ctx.make_mpf(mpf_mul(x._mpf_, y._mpf_, prec, rounding))
                 if hasattr(y, '_mpc_'):
@@ -1086,7 +1091,7 @@ maxterms, or set zeroprec."""
             raise ValueError("division is not an exact operation")
         x = ctx.convert(x)
         y = ctx.convert(y)
-        if hasattr(x, '_mpf_'):
+        if ctx._is_float_type(x):
             if hasattr(y, '_mpf_'):
                 return ctx.make_mpf(mpf_div(x._mpf_, y._mpf_, prec, rounding))
             if hasattr(y, '_mpc_'):
